@@ -225,6 +225,101 @@
     text-align:right;
   }
 
+  /* legend editor */
+  .legend-editor{
+    margin-top:8px;
+  }
+  .color-picker{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-bottom:8px;
+  }
+  .color-picker .swatch{
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    border:2px solid transparent;
+    cursor:pointer;
+    transition:border-color 0.15s;
+    flex:none;
+  }
+  .color-picker .swatch.active{
+    border-color:var(--gold);
+    box-shadow:0 0 0 2px var(--gold);
+  }
+  .color-picker .swatch:hover{
+    border-color:var(--rose);
+  }
+  .legend-add-row{
+    display:flex;
+    gap:6px;
+    margin-bottom:6px;
+  }
+  .legend-add-row input{
+    flex:1;
+  }
+  .legend-add-row button{
+    padding:6px 12px;
+    background:var(--blush);
+    border:1px solid var(--line);
+    border-radius:8px;
+    white-space:nowrap;
+  }
+  .legend-add-row button:hover{
+    background:var(--blush-deep);
+  }
+  .legend-list .legend-item{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:4px 0;
+    font-size:13px;
+    background:var(--blush);
+    border-radius:6px;
+    padding:4px 6px;
+    margin-bottom:3px;
+    transition:background 0.15s;
+  }
+  .legend-list .legend-item.drag-over{
+    background:var(--blush-deep);
+    border:1px solid var(--gold);
+    margin:-1px 0;
+  }
+  .legend-list .legend-item .drag-handle-sm{
+    cursor:grab;
+    user-select:none;
+    font-size:14px;
+    color:var(--muted);
+    padding:0 2px;
+    line-height:1;
+    flex:none;
+  }
+  .legend-list .legend-item .drag-handle-sm:active{
+    cursor:grabbing;
+  }
+  .legend-list .legend-item .dot{
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    flex:none;
+  }
+  .legend-list .legend-item .label{
+    flex:1;
+    word-break:break-word;
+    max-width:calc(100% - 60px);
+  }
+  .legend-list .legend-item .del{
+    cursor:pointer;
+    color:var(--muted);
+    font-size:14px;
+    padding:0 4px;
+    flex:none;
+  }
+  .legend-list .legend-item .del:hover{
+    color:var(--rose-deep);
+  }
+
   /* ---------- Stage ---------- */
   .stage-wrap{
     flex:1;
@@ -283,6 +378,9 @@
     font-size:13px;
     line-height:1.4;
     word-break:break-word;
+  }
+  .legend-overlay.hidden{
+    display:none;
   }
   #avatarsLayer{
     position:absolute;top:0;left:0;width:100%;height:100%;
@@ -346,7 +444,7 @@
     </div>
 
     <div class="field">
-      <label>图表标题</label>
+      <label>标题</label>
       <input type="text" id="titleInput" value="CP连线图" placeholder="（可留空）">
       <div class="hint">标题显示在画布左上角，留空则不显示。</div>
     </div>
@@ -354,7 +452,7 @@
     <div class="field">
       <label>添加角色</label>
       <input type="file" id="fileInput" accept="image/*" multiple>
-      <div class="hint">可一次选择多张图片，也可在下方直接输入名字创建无图片角色。</div>
+      <div class="hint">可以一次选择多张图片，也可以直接输入名字（8个汉字以内）创建无图片角色，最好不要超过28个角色。上传文件后可以在角色列表拖拽图片调整头像截取区域。</div>
       <div class="add-char-row">
         <input type="text" id="newCharNameInput" placeholder="输入角色名">
         <button id="addCharBtn">添加角色</button>
@@ -364,16 +462,32 @@
     <div class="field">
       <label>角色列表（可拖拽 ☰ 调整顺序）</label>
       <div id="charsList"></div>
-      <div class="hint" id="noCenterHint" style="display:none;">当前没有设为中心的角色</div>
+      <div class="hint" id="noCenterHint" style="display:none;">当前没有设为中心的角色。</div>
     </div>
 
     <div class="field">
-      <label>大圆圈半径调节</label>
+      <label>自定义图例（可拖拽 ☰ 调整顺序）</label>
+      <div class="legend-editor" id="legendEditor">
+        <!-- 颜色选择 -->
+        <div class="color-picker" id="colorPicker"></div>
+        <!-- 添加行 -->
+        <div class="legend-add-row">
+          <input type="text" id="legendDescInput" placeholder="描述（不超过20字符）" maxlength="20">
+          <button id="addLegendBtn">添加</button>
+        </div>
+        <!-- 已添加列表 -->
+        <div class="legend-list" id="legendList"></div>
+        <div class="hint">点击色块选择颜色，填写描述后添加；拖拽 ☰ 调整顺序，点击 ✕ 删除。</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>大圈半径调节</label>
       <div class="radius-control">
         <input type="range" id="radiusSlider" min="150" max="380" value="220" step="1">
         <span class="value" id="radiusValue">220px</span>
       </div>
-      <div class="hint">拖动滑块调整头像排列圆的半径，自动避开标题和图例。</div>
+      <div class="hint">拖动滑块调整大圈的半径，自动避开标题和图例。角色越多，可调节范围越窄。</div>
     </div>
 
     <div class="field">
@@ -400,21 +514,33 @@
   const STAGE_HEIGHT = 800;
   const AVATAR_DIAMETER = 70;
 
-  // 固定图例
-  const FIXED_LEGEND = [
+  // 预设颜色：红、橙、黄、绿、蓝、紫、灰、黑
+  const PRESET_COLORS = [
+    { color: "#e0201f", name: "红" },
+    { color: "#f2811d", name: "橙" },
+    { color: "#EFDB6A", name: "黄" },
+    { color: "#2fa84f", name: "绿" },
+    { color: "#1E90FF", name: "蓝" },
+    { color: "#6F2DA8", name: "紫" },
+    { color: "#9e9e9e", name: "灰" },
+    { color: "#1f1f1f", name: "黑" }
+  ];
+
+  // 初始图例
+  const DEFAULT_LEGEND = [
     { color: "#e0201f", label: "家产！可以靠这个活" },
     { color: "#f2811d", label: "美味，好吃爱吃" },
-    { color: "#f5c518", label: "路过磕一口" },
+    { color: "#EFDB6A", label: "路过磕一口" },
     { color: "#2fa84f", label: "CB/亲情向" },
-    { color: "#1E90FF", label: "和主流磕法不同" },
-    { color: "#9e9e9e", label: "不太喜欢" },
     { color: "#1f1f1f", label: "雷" }
   ];
 
   let state = {
     title: "CP连线图",
     chars: [],
-    customRadius: null      // 用户设定的半径（若null则自动计算）
+    customRadius: null,
+    legend: JSON.parse(JSON.stringify(DEFAULT_LEGEND)),
+    selectedColor: null
   };
 
   let uidCounter = 1;
@@ -438,73 +564,113 @@
   const emptyStage = document.getElementById("emptyStage");
   const stageOuter = document.getElementById("stageOuter");
 
-  // ---------- drag & drop support for char list ----------
-  let dragId = null;
+  // 图例编辑相关
+  const colorPicker = document.getElementById("colorPicker");
+  const legendDescInput = document.getElementById("legendDescInput");
+  const addLegendBtn = document.getElementById("addLegendBtn");
+  const legendList = document.getElementById("legendList");
 
-  function handleDragStart(e){
+  // ---------- drag & drop for chars ----------
+  let charDragId = null;
+
+  function handleCharDragStart(e){
     const handle = e.target.closest('.drag-handle');
     if (!handle) return;
     const item = handle.closest('.char-item');
     if (!item) return;
-    dragId = item.dataset.id;
+    charDragId = item.dataset.id;
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', dragId);
-    // 让拖拽时不显示默认的拖拽图像（可选）
-    // 无需特殊处理
+    e.dataTransfer.setData('text/plain', charDragId);
   }
 
-  function handleDragOver(e){
+  function handleCharDragOver(e){
     const item = e.target.closest('.char-item');
     if (!item) {
-      // 移除所有高亮
       document.querySelectorAll('.char-item.drag-over').forEach(el => el.classList.remove('drag-over'));
       return;
     }
-    e.preventDefault(); // 必须
+    e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    // 高亮目标
     document.querySelectorAll('.char-item.drag-over').forEach(el => el.classList.remove('drag-over'));
     item.classList.add('drag-over');
   }
 
-  function handleDragLeave(e){
+  function handleCharDragLeave(e){
     const item = e.target.closest('.char-item');
-    if (item) {
-      item.classList.remove('drag-over');
-    }
+    if (item) item.classList.remove('drag-over');
   }
 
-  function handleDrop(e){
+  function handleCharDrop(e){
     e.preventDefault();
-    // 移除高亮
     document.querySelectorAll('.char-item.drag-over').forEach(el => el.classList.remove('drag-over'));
-
     const targetItem = e.target.closest('.char-item');
     if (!targetItem) return;
     const targetId = targetItem.dataset.id;
-    if (!dragId || dragId === targetId) return;
-
-    // 获取拖拽和目标索引
-    const dragIndex = state.chars.findIndex(c => c.id === dragId);
+    if (!charDragId || charDragId === targetId) return;
+    const dragIndex = state.chars.findIndex(c => c.id === charDragId);
     const targetIndex = state.chars.findIndex(c => c.id === targetId);
     if (dragIndex === -1 || targetIndex === -1) return;
-
-    // 交换位置
     const [dragged] = state.chars.splice(dragIndex, 1);
     state.chars.splice(targetIndex, 0, dragged);
-
-    // 重置dragId
-    dragId = null;
-
-    // 重新渲染列表和舞台
+    charDragId = null;
     renderCharsList();
     renderStage();
   }
 
-  // 清理高亮（拖拽结束）
-  function handleDragEnd(e){
+  function handleCharDragEnd(e){
     document.querySelectorAll('.char-item.drag-over').forEach(el => el.classList.remove('drag-over'));
-    dragId = null;
+    charDragId = null;
+  }
+
+  // ---------- drag & drop for legend ----------
+  let legendDragIndex = null;
+
+  function handleLegendDragStart(e, index){
+    legendDragIndex = index;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+    // 拖拽时显示可移动光标
+  }
+
+  function handleLegendDragOver(e){
+    const item = e.target.closest('.legend-item');
+    if (!item) {
+      document.querySelectorAll('.legend-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+      return;
+    }
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.legend-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+    item.classList.add('drag-over');
+  }
+
+  function handleLegendDragLeave(e){
+    const item = e.target.closest('.legend-item');
+    if (item) item.classList.remove('drag-over');
+  }
+
+  function handleLegendDrop(e){
+    e.preventDefault();
+    document.querySelectorAll('.legend-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+    const targetItem = e.target.closest('.legend-item');
+    if (!targetItem) return;
+    const targetIndex = parseInt(targetItem.dataset.index, 10);
+    if (isNaN(targetIndex) || legendDragIndex === null || legendDragIndex === targetIndex) return;
+    
+    const dragIndex = legendDragIndex;
+    if (dragIndex < 0 || dragIndex >= state.legend.length || targetIndex < 0 || targetIndex >= state.legend.length) return;
+    
+    const [dragged] = state.legend.splice(dragIndex, 1);
+    state.legend.splice(targetIndex, 0, dragged);
+    legendDragIndex = null;
+    renderLegendEditor();
+    renderLegendOverlay();
+    renderStage();
+  }
+
+  function handleLegendDragEnd(e){
+    document.querySelectorAll('.legend-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+    legendDragIndex = null;
   }
 
   // ---------- radius slider ----------
@@ -598,14 +764,12 @@
       item.className = "char-item";
       item.dataset.id = ch.id;
 
-      // 拖拽手柄
       const handle = document.createElement("span");
       handle.className = "drag-handle";
       handle.textContent = "☰";
       handle.draggable = true;
-      handle.addEventListener("dragstart", handleDragStart);
-      handle.addEventListener("dragend", handleDragEnd);
-      // 为防止拖拽时触发其他事件
+      handle.addEventListener("dragstart", handleCharDragStart);
+      handle.addEventListener("dragend", handleCharDragEnd);
       handle.addEventListener("drag", (e)=>e.preventDefault());
       item.appendChild(handle);
 
@@ -719,28 +883,13 @@
       item.appendChild(controls);
       charsList.appendChild(item);
     });
-
-    // 为整个列表绑定 dragover 和 drop 事件（委托）
-    // 但为了精确，我们在每个item上绑定，但为了防止冒泡，我们在charsList上使用事件委托
-    // 由于我们已经在每个item上设置了drag-handle的dragstart，现在为charsList添加dragover/drop
-    // 但为了更精确，在charsList上监听会捕获所有进入的事件，我们可以在每个item上监听，但事件会冒泡，我们阻止即可。
-    // 更干净：在charsList上统一监听
-    // 但注意，charsList可能会被重新生成，所以每次重新生成后要重新绑定监听器。
-    // 在renderCharsList末尾重新绑定：
-    // 实际上，因为事件委托在父容器，只要绑定一次即可。
-    // 我们在初始化时绑定一次，但由于charsList被不断替换，事件监听会保留在父容器上。
-    // 但我们已经在全局添加了监听，所以不用每次都重新绑定。
   }
 
-  // 全局绑定拖放事件（在charsList上）
-  // 由于charsList是动态生成的，我们在init中绑定一次，事件委托即可。
-  function bindDragDropEvents(){
-    charsList.addEventListener("dragover", handleDragOver);
-    charsList.addEventListener("dragleave", handleDragLeave);
-    charsList.addEventListener("drop", handleDrop);
+  function bindCharDragDropEvents(){
+    charsList.addEventListener("dragover", handleCharDragOver);
+    charsList.addEventListener("dragleave", handleCharDragLeave);
+    charsList.addEventListener("drop", handleCharDrop);
   }
-
-  // 注意：由于renderCharsList会清空并重新填充item，但事件委托在父容器，所以依然有效。
 
   function applyImgTransform(img, ch, containerSize){
     const tx = (ch.offX/100) * containerSize;
@@ -772,10 +921,107 @@
     container.addEventListener("pointerleave", endDrag);
   }
 
-  // ---------- 固定图例渲染 ----------
+  // ---------- Legend Editor ----------
+  function renderLegendEditor(){
+    // 颜色选择器
+    colorPicker.innerHTML = "";
+    PRESET_COLORS.forEach(pc=>{
+      const swatch = document.createElement("div");
+      swatch.className = "swatch" + (state.selectedColor === pc.color ? " active" : "");
+      swatch.style.background = pc.color;
+      swatch.title = pc.name;
+      swatch.addEventListener("click", ()=>{
+        state.selectedColor = (state.selectedColor === pc.color) ? null : pc.color;
+        renderLegendEditor();
+      });
+      colorPicker.appendChild(swatch);
+    });
+
+    // 已添加列表（带拖拽）
+    legendList.innerHTML = "";
+    state.legend.forEach((item, idx)=>{
+      const div = document.createElement("div");
+      div.className = "legend-item";
+      div.dataset.index = idx;
+      div.draggable = false; // 不整体拖拽，只通过手柄
+
+      // 拖拽手柄
+      const handle = document.createElement("span");
+      handle.className = "drag-handle-sm";
+      handle.textContent = "☰";
+      handle.draggable = true;
+      handle.addEventListener("dragstart", (e)=>handleLegendDragStart(e, idx));
+      handle.addEventListener("dragend", handleLegendDragEnd);
+      handle.addEventListener("drag", (e)=>e.preventDefault());
+      div.appendChild(handle);
+
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      dot.style.background = item.color;
+      const label = document.createElement("span");
+      label.className = "label";
+      label.textContent = item.label;
+      const del = document.createElement("span");
+      del.className = "del";
+      del.textContent = "✕";
+      del.addEventListener("click", ()=>{
+        state.legend.splice(idx, 1);
+        renderLegendEditor();
+        renderLegendOverlay();
+        renderStage();
+      });
+      div.appendChild(dot);
+      div.appendChild(label);
+      div.appendChild(del);
+      legendList.appendChild(div);
+    });
+  }
+
+  // 绑定图例拖放事件（在legendList上委托）
+  function bindLegendDragDropEvents(){
+    legendList.addEventListener("dragover", handleLegendDragOver);
+    legendList.addEventListener("dragleave", handleLegendDragLeave);
+    legendList.addEventListener("drop", handleLegendDrop);
+  }
+
+  // 添加图例
+  addLegendBtn.addEventListener("click", ()=>{
+    const desc = legendDescInput.value.trim();
+    if (!desc) {
+      alert("请输入描述");
+      return;
+    }
+    if (desc.length > 20) {
+      alert("描述不能超过20个字符");
+      return;
+    }
+    if (!state.selectedColor) {
+      alert("请先选择一种颜色");
+      return;
+    }
+    state.legend.push({
+      color: state.selectedColor,
+      label: desc
+    });
+    legendDescInput.value = "";
+    state.selectedColor = null;
+    renderLegendEditor();
+    renderLegendOverlay();
+    renderStage();
+  });
+  legendDescInput.addEventListener("keydown", (e)=>{
+    if (e.key === "Enter") addLegendBtn.click();
+  });
+
+  // ---------- 图例显示 ----------
   function renderLegendOverlay(){
     legendOverlay.innerHTML = "";
-    FIXED_LEGEND.forEach(item=>{
+    if (state.legend.length === 0) {
+      legendOverlay.classList.add("hidden");
+      return;
+    }
+    legendOverlay.classList.remove("hidden");
+    state.legend.forEach(item=>{
       const div = document.createElement("div");
       div.className = "item";
       const sw = document.createElement("span");
@@ -797,13 +1043,11 @@
     const n = ringChars.length;
     const diameter = AVATAR_DIAMETER;
 
-    // 1. 计算自动半径（根据角色数量）
     const maxRadiusAuto = Math.min(STAGE_WIDTH, STAGE_HEIGHT)/2 - diameter/2 - 40;
     let autoRadius = n>0 ? Math.max(180, (diameter+30)*n/(2*Math.PI)) : 0;
     autoRadius = Math.min(autoRadius, maxRadiusAuto);
     if(n<=1) autoRadius = Math.min(230, maxRadiusAuto);
 
-    // 2. 测量左侧宽度（标题和图例）
     let leftWidth = 0;
     if (state.title && stageTitle.style.display !== "none") {
       leftWidth = Math.max(leftWidth, stageTitle.offsetWidth || 0);
@@ -811,13 +1055,11 @@
     const legendWidth = legendOverlay.offsetWidth || 0;
     leftWidth = Math.max(leftWidth, legendWidth);
 
-    // 3. 计算可用的最大半径
     const padding = 50;
     const maxAllowedRadius = (STAGE_WIDTH - leftWidth - diameter - padding - 20) / 2;
     const maxRadiusVertical = STAGE_HEIGHT/2 - diameter/2 - 40;
     const maxRadius = Math.min(maxAllowedRadius, maxRadiusVertical, 400);
 
-    // 4. 确定最终半径
     let finalRadius;
     if (state.customRadius !== null && state.customRadius >= 0) {
       finalRadius = Math.max(autoRadius, Math.min(state.customRadius, maxRadius));
@@ -826,7 +1068,6 @@
     }
     finalRadius = Math.min(finalRadius, maxRadius);
 
-    // 5. 计算圆心
     let cx = leftWidth + finalRadius + diameter/2 + padding;
     const maxCx = STAGE_WIDTH - finalRadius - diameter/2 - 20;
     cx = Math.min(cx, maxCx);
@@ -939,9 +1180,10 @@
 
   // ---------- init ----------
   function init(){
-    // 绑定拖放事件（仅一次）
-    bindDragDropEvents();
+    bindCharDragDropEvents();
+    bindLegendDragDropEvents();
     renderCharsList();
+    renderLegendEditor();
     renderLegendOverlay();
     renderStage();
     fitStage();

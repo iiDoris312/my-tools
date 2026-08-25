@@ -22,14 +22,14 @@
         }
 
         .container {
-            max-width: 900px;   /* 宽度 */
+            max-width: 960px;
             width: 100%;
         }
 
         /* ===== 大标题居中 ===== */
         .site-header {
             text-align: center;
-            margin-bottom: 36px;
+            margin-bottom: 28px;
         }
 
         .site-title {
@@ -61,76 +61,92 @@
             background: #2563eb10;
         }
 
-        /* ===== 卡片列表 ===== */
-        .tool-list {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
+        /* ===== 宫格 ===== */
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0;
             list-style: none;
+            border: 2px solid #d0d5dd;
         }
 
-        .tool-list li {
+        .tool-grid li {
             margin: 0;
         }
 
         .tool-card {
             display: flex;
-            flex-direction: column;   /* 纵向排列 */
-            padding: 20px 28px;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 28px 16px 22px;
             background: #ffffff;
-            border: 1px solid #e6eaef;
-            border-width: 0 0 1px 0;
+            border-right: 2px solid #d0d5dd;
+            border-bottom: 2px solid #d0d5dd;
             text-decoration: none;
             color: #1a1e24;
-            transition: background 0.15s, box-shadow 0.15s;
+            transition: background 0.15s;
+            height: 100%;
         }
 
-        .tool-list li:first-child .tool-card {
-            border-top-width: 1px;
-            border-radius: 12px 12px 0 0;
+        /* 每行最后一个去掉右边框 */
+        .tool-grid li:nth-child(3n) .tool-card {
+            border-right: none;
         }
 
-        .tool-list li:last-child .tool-card {
-            border-bottom-width: 1px;
-            border-radius: 0 0 12px 12px;
+        /* 最后一行去掉下边框 */
+        .tool-grid li:nth-last-child(-n+3) .tool-card {
+            border-bottom: none;
         }
 
         .tool-card:hover {
-            background: #fafcff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-        }
-
-        /* 第一行：图标+标题 */
-        .tool-row {
-            display: flex;
-            align-items: center;
-            gap: 6px;          /* 图标和标题紧挨着 */
-            margin-bottom: 4px;
+            background: #f0f2f5;
         }
 
         .tool-icon {
-            font-size: 28px;
-            flex-shrink: 0;
+            font-size: 36px;
             line-height: 1;
+            margin-bottom: 10px;
         }
 
         .tool-name {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 600;
             color: #1a1e24;
-            letter-spacing: -0.2px;
+            margin-bottom: 6px;
         }
 
-        /* 第二行及之后：简介 */
         .tool-desc {
-            font-size: 15px;
-            color: #5e6670;
+            font-size: 13px;
+            color: #6e7687;
             line-height: 1.5;
             font-weight: 400;
-            padding-left: 0;   /* 从卡片左侧开始，与图标对齐 */
         }
 
-        /* 响应式 */
+        /* ===== 响应式 ===== */
+        @media (max-width: 768px) {
+            .tool-grid {
+                grid-template-columns: repeat(2, 1fr);
+                border: 2px solid #d0d5dd;
+            }
+
+            .tool-grid li:nth-child(3n) .tool-card {
+                border-right: 2px solid #d0d5dd;
+            }
+
+            .tool-grid li:nth-child(2n) .tool-card {
+                border-right: none;
+            }
+
+            .tool-grid li:nth-last-child(-n+2) .tool-card {
+                border-bottom: none;
+            }
+
+            .tool-grid li:last-child .tool-card {
+                border-bottom: none;
+            }
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 20px 12px;
@@ -138,73 +154,76 @@
             .site-title {
                 font-size: 28px;
             }
-            .tool-card {
+            .tool-grid {
+                grid-template-columns: 1fr;
+                border: 2px solid #d0d5dd;
+            }
+
+            .tool-grid li .tool-card {
+                border-right: none;
+                flex-direction: row;
+                text-align: left;
+                gap: 14px;
+                align-items: center;
                 padding: 16px 18px;
             }
+
+            .tool-grid li:last-child .tool-card {
+                border-bottom: none;
+            }
+
             .tool-icon {
-                font-size: 22px;
+                font-size: 28px;
+                margin-bottom: 0;
+                flex-shrink: 0;
             }
             .tool-name {
-                font-size: 18px;
+                font-size: 16px;
+                margin-bottom: 2px;
             }
             .tool-desc {
-                font-size: 14px;
+                font-size: 12px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- 顶部：大标题居中 -->
+        <!-- 顶部 -->
         <header class="site-header">
             <h1 class="site-title">我的工具</h1>
-            <div class="site-sub">如果对工具的功能有改进意见，可以从GitHub仓库下载原文件，使用VS Code或其他编程工具自行修改</div>
+            <div class="site-sub">如有改进意见，可以从GitHub仓库下载原文件自行修改</div>
             <a class="site-link" href="https://github.com/xuningji/my-tools" target="_blank">
                 🔗 GitHub
             </a>
         </header>
 
-        <!-- 卡片列表 -->
-        <ul class="tool-list">
+        <!-- 宫格 -->
+        <ul class="tool-grid">
             <li>
                 <a href="./timeline/" class="tool-card">
-                    <div class="tool-row">
-                        <span class="tool-icon">📅</span>
-                        <span class="tool-name">时间轴</span>
-                    </div>
-                    <div class="tool-desc">
-                        简易时间轴制作工具。
-                        使用方法：
-                        点击“添加事件”，填写时间（年份必填，月份和日期选填）、事件名称和事件简介（选填）；
-                        调整字体大小、图片宽度、背景色、主轴颜色、主轴位置等样式；
-                        点击“导出图片”保存为PNG，或“导出配置”备份JSON文件，下次导入JSON文件即可继续填写。
+                    <span class="tool-icon">📅</span>
+                    <div>
+                        <div class="tool-name">时间轴</div>
+                        <div class="tool-desc">按时间顺序排列事件，可导出图片和JSON配置，适用于公历</div>
                     </div>
                 </a>
             </li>
             <li>
                 <a href="./timeline-commen/" class="tool-card">
-                    <div class="tool-row">
-                        <span class="tool-icon">📅</span>
-                        <span class="tool-name">时间轴（通用版）</span>
-                    </div>
-                    <div class="tool-desc">
-                        时间轴的通用版，可用于农历和架空世界的历法等，完全自定义排序。
-                        注意，两个时间轴工具导出的JSON文件不互通。
+                    <span class="tool-icon">📅</span>
+                    <div>
+                        <div class="tool-name">时间轴（通用版）</div>
+                        <div class="tool-desc">支持公历、农历、架空历等多种历法，完全自定义事件顺序</div>
                     </div>
                 </a>
             </li>
             <li>
                 <a href="./cp-relationship/" class="tool-card">
-                    <div class="tool-row">
-                        <span class="tool-icon">❤️</span>
-                        <span class="tool-name">CP连线图</span>
-                    </div>
-                    <div class="tool-desc">
-                        CP连线图制作工具。使用方法：
-                        上传图片（可拖拽调整截取区域）或输入角色名添加纯文字头像，建议不超过28个；
-                        在角色列表中拖拽 ☰ 调整顺序，可勾选“设为中心”将一个角色置于圆心；
-                        添加自定义图例，可拖拽 ☰ 调整顺序，点击 ✕ 删除；拖动滑块调整大圈半径和角色之间的间隔；
-                        点击“导出为图片”保存为 PNG。
+                    <span class="tool-icon">❤️</span>
+                    <div>
+                        <div class="tool-name">CP连线图</div>
+                        <div class="tool-desc">上传图片或输入名字，会自动围成一个圈，可自定义图例</div>
                     </div>
                 </a>
             </li>

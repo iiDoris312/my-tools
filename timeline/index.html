@@ -297,8 +297,8 @@ body {
 <div class="toolbar no-export">
   <input type="text" id="search" placeholder="搜索事件……">
   <select id="sort-sel">
-    <option value="asc">日期正序</option>
-    <option value="desc">日期倒序</option>
+    <option value="asc">时间正序</option>
+    <option value="desc">时间倒序</option>
   </select>
   <button class="btn btn-add" onclick="openModal(null)"><i class="ti ti-plus"></i> 添加事件</button>
   <button class="btn" onclick="exportPNG()"><i class="ti ti-download"></i> 导出图片</button>
@@ -341,15 +341,15 @@ body {
 <div class="modal-bg"><div class="modal">
   <h3 id="modal-h">添加事件</h3>
   <div class="field">
-    <label>日期（年份必填，月和日选填）</label>
+    <label>时间（年份必填，月份和日期选填）</label>
     <div class="date-row">
-      <div class="date-field"><label>年 *</label><input type="number" id="m-year" placeholder="如 1 或 -114"></div>
-      <div class="date-field"><label>月</label><input type="number" id="m-month" placeholder="1–12" min="1" max="12"></div>
-      <div class="date-field"><label>日</label><input type="number" id="m-day" placeholder="1–31" min="1" max="31"></div>
+      <div class="date-field"><label>年份 *</label><input type="number" id="m-year" placeholder="如：1或-114"></div>
+      <div class="date-field"><label>月份</label><input type="number" id="m-month" placeholder="1–12" min="1" max="12"></div>
+      <div class="date-field"><label>日期</label><input type="number" id="m-day" placeholder="1–31" min="1" max="31"></div>
     </div>
     <div class="date-hint">正数=纪元后，负数=纪元前；填了月才能填日</div>
   </div>
-  <div class="field"><label>事件</label><input type="text" id="m-name" placeholder="例：征服元年"></div>
+  <div class="field"><label>事件</label><input type="text" id="m-name" placeholder="例：征服战争"></div>
   <div class="field"><label>简介（选填）</label><textarea id="m-desc" placeholder="简要描述事件……"></textarea></div>
   <!-- 新增：顺序输入框 -->
   <div class="field">

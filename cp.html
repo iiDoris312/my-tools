@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>CP连线图</title>
+<style>
+  :root{
+    --ink:#202124;
+    --plum:#3a3f47;
+    --plum-deep:#23262b;
+    --blush:#f3f4f5;
+    --blush-deep:#e8e9eb;
+    --rose:#5b6470;
+    --rose-deep:#40474f;
+    --paper:#ffffff;
+    --line:#e2e3e6;
+    --muted:#83878d;
+    --gold:#6b7280;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: "PingFang SC", "Microsoft YaHei", "SimHei", sans-serif;
+    background:var(--blush);
+    color:var(--ink);
+  }
+  .app{
+    display:flex;
+    min-height:100vh;
+  }
+  .panel{
+    width:340px;
+    flex:none;
+    background:var(--paper);
+    border-right:1px solid var(--line);
+    padding:22px 20px 40px;
+    overflow-y:auto;
+    max-height:100vh;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+    margin-bottom:22px;
+  }
+  .brand .mark{
+    font-family: "PingFang SC", "Microsoft YaHei", "SimHei", sans-serif;
+    font-size:24px;
+    color:var(--ink);
+    font-weight:700;
+    letter-spacing:.05em;
+  }
+  .field{
+    margin-bottom:24px;
+    padding-bottom:20px;
+    border-bottom:1px dashed var(--line);
+  }
+  .field:last-child{border-bottom:none;}
+  .field > label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--plum);
+    margin-bottom:8px;
+    letter-spacing:.03em;
+  }
+  input[type=text], input[type=number]{
+    width:100%;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:13.5px;
+    background:#fff;
+    color:var(--ink);
+    outline:none;
+  }
+  input[type=text]:focus{border-color:var(--rose);}
+  .hint{
+    font-size:11.5px;
+    color:var(--muted);
+    margin-top:6px;
+    line-height:1.5;
+  }
+  input[type=file]{
+    font-size:12.5px;
+    width:100%;
+  }
+  button{
+    cursor:pointer;
+    font-family:inherit;
+    border:none;
+    border-radius:8px;
+    font-size:13px;
+    transition:transform .1s ease, opacity .15s ease;
+  }
+  button:active{transform:scale(.96);}
+  .btn-primary{
+    width:100%;
+    padding:11px;
+    background:var(--rose);
+    color:#fff;
+    font-weight:600;
+    letter-spacing:.03em;
+  }
+  .btn-primary:hover{background:var(--rose-deep);}
+  .btn-ghost{
+    background:transparent;
+    color:var(--muted);
+    padding:4px 8px;
+    font-size:12px;
+  }
+  .btn-ghost:hover{color:var(--rose);}
+  .add-char-row{
+    display:flex;
+    gap:6px;
+    margin-top:8px;
+  }
+  .add-char-row input{flex:1;}
+  .add-char-row button{
+    padding:6px 14px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--blush);
+    white-space:nowrap;
+  }
+  .add-char-row button:hover{background:var(--blush-deep);}
+
+  /* character cards */
+  .char-item{
+    display:flex;
+    gap:6px;
+    padding:8px 6px 8px 4px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    margin-bottom:8px;
+    background:var(--blush);
+    align-items:center;
+    transition:background 0.15s;
+  }
+  .char-item.drag-over{
+    background:var(--blush-deep);
+    border-color:var(--gold);
+    box-shadow:0 0 0 2px var(--gold);
+  }
+  .drag-handle{
+    cursor:grab;
+    user-select:none;
+    font-size:18px;
+    color:var(--muted);
+    padding:0 2px;
+    line-height:1;
+    flex:none;
+  }
+  .drag-handle:active{
+    cursor:grabbing;
+  }
+  .char-preview-wrap{flex:none;}
+  .char-preview-circle{
+    width:56px;height:56px;
+    border-radius:50%;
+    overflow:hidden;
+    position:relative;
+    background:#dcdde0;
+    cursor:grab;
+    box-shadow:0 0 0 1px var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    user-select:none;
+  }
+  .char-preview-circle:active{cursor:grabbing;}
+  .char-preview-circle img{
+    position:absolute;
+    top:0;left:0;width:100%;height:100%;
+    object-fit:cover;
+    pointer-events:none;
+    user-select:none;
+  }
+  .char-preview-circle .char-text{
+    position:relative;
+    z-index:1;
+    text-align:center;
+    line-height:1.2;
+    padding:2px;
+    word-break:break-word;
+    width:80%;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .char-controls{flex:1;min-width:0;}
+  .char-controls input[type=text]{
+    padding:5px 8px;font-size:12.5px;margin-bottom:6px;
+  }
+  .char-controls .row{
+    display:flex;align-items:center;gap:6px;margin-bottom:5px;
+  }
+  .char-controls .row label{
+    font-size:11px;color:var(--muted);flex:none;width:34px;
+  }
+  input[type=range]{flex:1;accent-color:var(--rose);}
+  .char-controls .bottom-row{
+    display:flex;justify-content:space-between;align-items:center;margin-top:4px;
+  }
+  .center-toggle{
+    font-size:11px;color:var(--plum);display:flex;align-items:center;gap:4px;cursor:pointer;
+  }
+  .center-toggle input{accent-color:var(--gold);}
+
+  /* radius slider */
+  .radius-control{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:6px;
+  }
+  .radius-control input[type=range]{
+    flex:1;
+    accent-color:var(--rose);
+  }
+  .radius-control .value{
+    font-size:14px;
+    font-weight:600;
+    color:var(--ink);
+    min-width:50px;
+    text-align:right;
+  }
+
+  /* legend editor */
+  .legend-editor{
+    margin-top:8px;
+  }
+  .color-picker{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-bottom:8px;
+  }
+  .color-picker .swatch{
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    border:2px solid transparent;
+    cursor:pointer;
+    transition:border-color 0.15s;
+    flex:none;
+  }
+  .color-picker .swatch.active{
+    border-color:var(--gold);
+    box-shadow:0 0 0 2px var(--gold);
+  }
+  .color-picker .swatch:hover{
+    border-color:var(--rose);
+  }
+  .legend-add-row{
+    display:flex;
+    gap:6px;
+    margin-bottom:6px;
+  }
+  .legend-add-row input{
+    flex:1;
+  }
+  .legend-add-row button{
+    padding:6px 12px;
+    background:var(--blush);
+    border:1px solid var(--line);
+    border-radius:8px;
+    white-space:nowrap;
+  }
+  .legend-add-row button:hover{
+    background:var(--blush-deep);
+  }
+  .legend-list .legend-item{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:4px 0;
+    font-size:13px;
+    background:var(--blush);
+    border-radius:6px;
+    padding:4px 6px;
+    margin-bottom:3px;
+    transition:background 0.15s;
+  }
+  .legend-list .legend-item.drag-over{
+    background:var(--blush-deep);
+    border:1px solid var(--gold);
+    margin:-1px 0;
+  }
+  .legend-list .legend-item .drag-handle-sm{
+    cursor:grab;
+    user-select:none;
+    font-size:14px;
+    color:var(--muted);
+    padding:0 2px;
+    line-height:1;
+    flex:none;
+  }
+  .legend-list .legend-item .drag-handle-sm:active{
+    cursor:grabbing;
+  }
+  .legend-list .legend-item .dot{
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    flex:none;
+  }
+  .legend-list .legend-item .label{
+    flex:1;
+    word-break:break-word;
+    max-width:calc(100% - 60px);
+  }
+  .legend-list .legend-item .del{
+    cursor:pointer;
+    color:var(--muted);
+    font-size:14px;
+    padding:0 4px;
+    flex:none;
+  }
+  .legend-list .legend-item .del:hover{
+    color:var(--rose-deep);
+  }
+
+  /* ---------- Stage ---------- */
+  .stage-wrap{
+    flex:1;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:40px 24px;
+    overflow:auto;
+  }
+  .stage-outer{
+    position:relative;
+  }
+  .stage{
+    width:1000px;
+    height:800px;
+    background:#ffffff;
+    position:relative;
+    border-radius:6px;
+    box-shadow:0 4px 40px rgba(74,33,64,0.08);
+    transform-origin:top left;
+  }
+  .stage-title{
+    position:absolute;
+    top:20px;
+    left:20px;
+    font-family: "PingFang SC", "Microsoft YaHei", "SimHei", sans-serif;
+    font-size:32px;
+    font-weight:700;
+    color:var(--ink);
+    letter-spacing:.04em;
+    pointer-events:none;
+    max-width:55%;
+    line-height:1.2;
+  }
+  .legend-overlay{
+    position:absolute;
+    bottom:18px;
+    left:20px;
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    font-size:14px;
+    color:var(--ink);
+    z-index:5;
+    background:rgba(255,255,255,.85);
+    padding:10px 14px;
+    border-radius:10px;
+    box-shadow:0 2px 12px rgba(0,0,0,0.06);
+    max-width:50%;
+  }
+  .legend-overlay .item{display:flex;align-items:center;gap:8px;}
+  .legend-overlay .sw{
+    width:16px;height:16px;border-radius:50%;flex:none;
+  }
+  .legend-overlay .label{
+    font-size:13px;
+    line-height:1.4;
+    word-break:break-word;
+  }
+  .legend-overlay.hidden{
+    display:none;
+  }
+  #avatarsLayer{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+  }
+  .avatar{
+    position:absolute;
+    border-radius:50%;
+    overflow:hidden;
+    background:#dcdde0;
+    box-shadow:0 2px 10px rgba(0,0,0,0.12);
+    cursor:default;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    user-select:none;
+  }
+  .avatar img{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    object-fit:cover;pointer-events:none;
+  }
+  .avatar .avatar-text{
+    font-weight:600;
+    color:var(--ink);
+    text-align:center;
+    line-height:1.2;
+    padding:2px;
+    word-break:break-word;
+    width:80%;
+    z-index:1;
+    pointer-events:none;
+  }
+  .avatar-name{
+    position:absolute;
+    top:100%;left:50%;
+    transform:translateX(-50%);
+    margin-top:6px;
+    font-size:14px;
+    white-space:nowrap;
+    color:var(--ink);
+    background:rgba(255,255,255,.9);
+    padding:2px 10px;
+    border-radius:8px;
+    pointer-events:none;
+    font-weight:500;
+    box-shadow:0 1px 4px rgba(0,0,0,0.06);
+  }
+  .empty-stage{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--muted);font-size:14px;text-align:center;padding:40px;
+    line-height:1.8;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="panel">
+    <div class="brand">
+      <span class="mark">CP连线图工坊</span>
+    </div>
+
+    <div class="field">
+      <label>标题</label>
+      <input type="text" id="titleInput" value="CP连线图" placeholder="（可留空）">
+      <div class="hint">标题显示在画布左上角，留空则不显示。</div>
+    </div>
+
+    <div class="field">
+      <label>添加角色</label>
+      <input type="file" id="fileInput" accept="image/*" multiple>
+      <div class="hint">可以一次选择多张图片，也可以直接输入名字（8个汉字以内）创建无图片角色，最好不要超过28个角色。上传文件后可以在角色列表拖拽图片调整头像截取区域。</div>
+      <div class="add-char-row">
+        <input type="text" id="newCharNameInput" placeholder="输入角色名">
+        <button id="addCharBtn">添加角色</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>角色列表（可拖拽 ☰ 调整顺序）</label>
+      <div id="charsList"></div>
+      <div class="hint" id="noCenterHint" style="display:none;">当前没有设为中心的角色。</div>
+    </div>
+
+    <div class="field">
+      <label>自定义图例（可拖拽 ☰ 调整顺序）</label>
+      <div class="legend-editor" id="legendEditor">
+        <!-- 颜色选择 -->
+        <div class="color-picker" id="colorPicker"></div>
+        <!-- 添加行 -->
+        <div class="legend-add-row">
+          <input type="text" id="legendDescInput" placeholder="描述（不超过20字符）" maxlength="20">
+          <button id="addLegendBtn">添加</button>
+        </div>
+        <!-- 已添加列表 -->
+        <div class="legend-list" id="legendList"></div>
+        <div class="hint">点击色块选择颜色，填写描述后添加；拖拽 ☰ 调整顺序，点击 ✕ 删除。</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>大圈半径调节</label>
+      <div class="radius-control">
+        <input type="range" id="radiusSlider" min="150" max="380" value="220" step="1">
+        <span class="value" id="radiusValue">220px</span>
+      </div>
+      <div class="hint">拖动滑块调整大圈的半径，自动避开标题和图例。角色越多，可调节范围越窄。</div>
+    </div>
+
+    <div class="field">
+      <button class="btn-primary" id="exportBtn">导出为图片</button>
+    </div>
+  </aside>
+
+  <main class="stage-wrap">
+    <div class="stage-outer" id="stageOuter">
+      <div class="stage" id="stage">
+        <div class="stage-title" id="stageTitle">CP连线图</div>
+        <div class="legend-overlay" id="legendOverlay"></div>
+        <div id="avatarsLayer"></div>
+        <div class="empty-stage" id="emptyStage">在左侧添加角色<br>它们会自动围成一个圈</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+(function(){
+  const STAGE_WIDTH = 1000;
+  const STAGE_HEIGHT = 800;
+  const AVATAR_DIAMETER = 70;
+
+  // 预设颜色：红、橙、黄、绿、蓝、紫、灰、黑
+  const PRESET_COLORS = [
+    { color: "#f09199", name: "红" },
+    { color: "#f8b862", name: "橙" },
+    { color: "#ffd900", name: "黄" },
+    { color: "#84a2d4", name: "蓝" },
+    { color: "#C2AFE6", name: "紫" },
+    { color: "#aacf53", name: "绿" },
+    { color: "#9e9e9e", name: "灰" },
+    { color: "#1f1f1f", name: "黑" }
+  ];
+
+  // 初始图例
+  const DEFAULT_LEGEND = [
+    { color: "#f09199", label: "LOVE" },
+    { color: "#f8b862", label: "喜欢" },
+    { color: "#ffd900", label: "好感" },
+    { color: "#84a2d4", label: "无感" },
+    { color: "#C2AFE6", label: "婉拒" },
+    { color: "#aacf53", label: "恶感" }
+  ];
+
+  let state = {
+    title: "CP连线图",
+    chars: [],
+    customRadius: null,
+    legend: JSON.parse(JSON.stringify(DEFAULT_LEGEND)),
+    selectedColor: null
+  };
+
+  let uidCounter = 1;
+  function uid(prefix){ return prefix + (uidCounter++) + "_" + Math.random().toString(36).slice(2,7); }
+
+  // ---------- DOM refs ----------
+  const titleInput = document.getElementById("titleInput");
+  const fileInput = document.getElementById("fileInput");
+  const charsList = document.getElementById("charsList");
+  const noCenterHint = document.getElementById("noCenterHint");
+  const exportBtn = document.getElementById("exportBtn");
+  const newCharNameInput = document.getElementById("newCharNameInput");
+  const addCharBtn = document.getElementById("addCharBtn");
+  const radiusSlider = document.getElementById("radiusSlider");
+  const radiusValue = document.getElementById("radiusValue");
+
+  const stage = document.getElementById("stage");
+  const stageTitle = document.getElementById("stageTitle");
+  const legendOverlay = document.getElementById("legendOverlay");
+  const avatarsLayer = document.getElementById("avatarsLayer");
+  const emptyStage = document.getElementById("emptyStage");
+  const stageOuter = document.getElementById("stageOuter");
+
+  // 图例编辑相关
+  const colorPicker = document.getElementById("colorPicker");
+  const legendDescInput = document.getElementById("legendDescInput");
+  const addLegendBtn = document.getElementById("addLegendBtn");
+  const legendList = document.getElementById("legendList");
+
+  // ---------- drag & drop for chars ----------
+  let charDragId = null;
+
+  function handleCharDragStart(e){
+    const handle = e.target.closest('.drag-handle');
+    if (!handle) return;
+    const item = handle.closest('.char-item');
+    if (!item) return;
+    charDragId = item.dataset.id;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', charDragId);
+  }
+
+  function handleCharDragOver(e){
+    const item = e.target.closest('.char-item');
+    if (!item) {
+      document.querySelectorAll('.char-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+      return;
+    }
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.char-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+    item.classList.add('drag-over');
+  }
+
+  function handleCharDragLeave(e){
+    const item = e.target.closest('.char-item');
+    if (item) item.classList.remove('drag-over');
+  }
+
+  function handleCharDrop(e){
+    e.preventDefault();
+    document.querySelectorAll('.char-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+    const targetItem = e.target.closest('.char-item');
+    if (!targetItem) return;
+    const targetId = targetItem.dataset.id;
+    if (!charDragId || charDragId === targetId) return;
+    const dragIndex = state.chars.findIndex(c => c.id === charDragId);
+    const targetIndex = state.chars.findIndex(c => c.id === targetId);
+    if (dragIndex === -1 || targetIndex === -1) return;
+    const [dragged] = state.chars.splice(dragIndex, 1);
+    state.chars.splice(targetIndex, 0, dragged);
+    charDragId = null;
+    renderCharsList();
+    renderStage();
+  }
+
+  function handleCharDragEnd(e){
+    document.querySelectorAll('.char-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+    charDragId = null;
+  }
+
+  // ---------- drag & drop for legend ----------
+  let legendDragIndex = null;
+
+  function handleLegendDragStart(e, index){
+    legendDragIndex = index;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+    // 拖拽时显示可移动光标
+  }
+
+  function handleLegendDragOver(e){
+    const item = e.target.closest('.legend-item');
+    if (!item) {
+      document.querySelectorAll('.legend-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+      return;
+    }
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.legend-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+    item.classList.add('drag-over');
+  }
+
+  function handleLegendDragLeave(e){
+    const item = e.target.closest('.legend-item');
+    if (item) item.classList.remove('drag-over');
+  }
+
+  function handleLegendDrop(e){
+    e.preventDefault();
+    document.querySelectorAll('.legend-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+    const targetItem = e.target.closest('.legend-item');
+    if (!targetItem) return;
+    const targetIndex = parseInt(targetItem.dataset.index, 10);
+    if (isNaN(targetIndex) || legendDragIndex === null || legendDragIndex === targetIndex) return;
+    
+    const dragIndex = legendDragIndex;
+    if (dragIndex < 0 || dragIndex >= state.legend.length || targetIndex < 0 || targetIndex >= state.legend.length) return;
+    
+    const [dragged] = state.legend.splice(dragIndex, 1);
+    state.legend.splice(targetIndex, 0, dragged);
+    legendDragIndex = null;
+    renderLegendEditor();
+    renderLegendOverlay();
+    renderStage();
+  }
+
+  function handleLegendDragEnd(e){
+    document.querySelectorAll('.legend-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+    legendDragIndex = null;
+  }
+
+  // ---------- radius slider ----------
+  radiusSlider.addEventListener("input", ()=>{
+    const val = parseInt(radiusSlider.value, 10);
+    radiusValue.textContent = val + "px";
+    state.customRadius = val;
+    renderStage();
+  });
+
+  // ---------- title ----------
+  titleInput.addEventListener("input", ()=>{
+    state.title = titleInput.value;
+    stageTitle.textContent = state.title || "";
+    stageTitle.style.display = state.title ? "block" : "none";
+    renderStage();
+  });
+  if (!state.title) stageTitle.style.display = "none";
+
+  // ---------- file upload ----------
+  fileInput.addEventListener("change", (e)=>{
+    const files = Array.from(e.target.files || []);
+    files.forEach(file=>{
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        state.chars.push({
+          id: uid("char"),
+          src: reader.result,
+          offX: 0, offY: 0, scale: 1,
+          name: "",
+          isCenter: false
+        });
+        renderCharsList();
+        renderStage();
+      };
+      reader.readAsDataURL(file);
+    });
+    fileInput.value = "";
+  });
+
+  // ---------- add character without image ----------
+  addCharBtn.addEventListener("click", ()=>{
+    const name = newCharNameInput.value.trim();
+    if(!name){
+      alert("请输入角色名");
+      return;
+    }
+    state.chars.push({
+      id: uid("char"),
+      src: null,
+      offX: 0, offY: 0, scale: 1,
+      name: name,
+      isCenter: false
+    });
+    newCharNameInput.value = "";
+    renderCharsList();
+    renderStage();
+  });
+  newCharNameInput.addEventListener("keydown", (e)=>{
+    if(e.key==="Enter") addCharBtn.click();
+  });
+
+  // ---------- helper for text sizing ----------
+  function getDisplayNameAndFontSize(name, containerDiameter){
+    let displayName = name || "?";
+    if (displayName.length > 8) {
+      displayName = displayName.slice(0,8) + "…";
+    }
+    const availWidth = containerDiameter * 0.8;
+    let fontSize;
+    const len = displayName.length;
+    if (len <= 4) {
+      fontSize = availWidth / len;
+    } else {
+      fontSize = availWidth / 4;
+    }
+    const maxSize = containerDiameter >= 70 ? 24 : 20;
+    fontSize = Math.min(maxSize, fontSize);
+    fontSize = Math.max(8, fontSize);
+    return { displayName, fontSize };
+  }
+
+  // ---------- characters sidebar ----------
+  function renderCharsList(){
+    charsList.innerHTML = "";
+    const hasCenter = state.chars.some(c=>c.isCenter);
+    noCenterHint.style.display = hasCenter ? "none" : "block";
+
+    state.chars.forEach(ch=>{
+      const item = document.createElement("div");
+      item.className = "char-item";
+      item.dataset.id = ch.id;
+
+      const handle = document.createElement("span");
+      handle.className = "drag-handle";
+      handle.textContent = "☰";
+      handle.draggable = true;
+      handle.addEventListener("dragstart", handleCharDragStart);
+      handle.addEventListener("dragend", handleCharDragEnd);
+      handle.addEventListener("drag", (e)=>e.preventDefault());
+      item.appendChild(handle);
+
+      const previewWrap = document.createElement("div");
+      previewWrap.className = "char-preview-wrap";
+      const preview = document.createElement("div");
+      preview.className = "char-preview-circle";
+
+      if(ch.src){
+        const img = document.createElement("img");
+        img.src = ch.src;
+        applyImgTransform(img, ch, 56);
+        preview.appendChild(img);
+        preview.style.background = "transparent";
+      } else {
+        const textSpan = document.createElement("span");
+        textSpan.className = "char-text";
+        const { displayName, fontSize } = getDisplayNameAndFontSize(ch.name, 56);
+        textSpan.textContent = displayName;
+        textSpan.style.fontSize = fontSize + "px";
+        preview.appendChild(textSpan);
+        preview.style.background = "#e8eaed";
+      }
+
+      previewWrap.appendChild(preview);
+      item.appendChild(previewWrap);
+
+      if(ch.src){
+        makeDraggable(preview, ch, 56);
+      } else {
+        preview.style.cursor = "default";
+      }
+
+      const controls = document.createElement("div");
+      controls.className = "char-controls";
+
+      const nameInput = document.createElement("input");
+      nameInput.type = "text";
+      nameInput.placeholder = "角色名（可选）";
+      nameInput.value = ch.name;
+      nameInput.addEventListener("input", ()=>{
+        ch.name = nameInput.value;
+        const previewText = item.querySelector(".char-text");
+        if (previewText) {
+          const { displayName, fontSize } = getDisplayNameAndFontSize(ch.name, 56);
+          previewText.textContent = displayName;
+          previewText.style.fontSize = fontSize + "px";
+        }
+        renderStage();
+      });
+      controls.appendChild(nameInput);
+
+      if(ch.src){
+        const zoomRow = document.createElement("div");
+        zoomRow.className = "row";
+        const zoomLabel = document.createElement("label");
+        zoomLabel.textContent = "缩放";
+        const zoomSlider = document.createElement("input");
+        zoomSlider.type = "range";
+        zoomSlider.min = "100"; zoomSlider.max = "300"; zoomSlider.value = String(ch.scale*100);
+        zoomSlider.addEventListener("input", ()=>{
+          ch.scale = Number(zoomSlider.value)/100;
+          const img = preview.querySelector("img");
+          if(img) applyImgTransform(img, ch, 56);
+          renderStage();
+        });
+        zoomRow.appendChild(zoomLabel);
+        zoomRow.appendChild(zoomSlider);
+        controls.appendChild(zoomRow);
+      } else {
+        const hintRow = document.createElement("div");
+        hintRow.className = "row";
+        hintRow.style.color = "var(--muted)";
+        hintRow.style.fontSize = "11px";
+        hintRow.textContent = "（无图片）";
+        controls.appendChild(hintRow);
+      }
+
+      const bottomRow = document.createElement("div");
+      bottomRow.className = "bottom-row";
+
+      const centerLabel = document.createElement("label");
+      centerLabel.className = "center-toggle";
+      const centerCheckbox = document.createElement("input");
+      centerCheckbox.type = "checkbox";
+      centerCheckbox.checked = ch.isCenter;
+      centerCheckbox.addEventListener("change", ()=>{
+        if(centerCheckbox.checked){
+          state.chars.forEach(c=>c.isCenter = (c.id===ch.id));
+        } else {
+          ch.isCenter = false;
+        }
+        renderCharsList();
+        renderStage();
+      });
+      centerLabel.appendChild(centerCheckbox);
+      centerLabel.appendChild(document.createTextNode("设为中心"));
+      bottomRow.appendChild(centerLabel);
+
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "btn-ghost";
+      removeBtn.textContent = "删除";
+      removeBtn.addEventListener("click", ()=>{
+        state.chars = state.chars.filter(c=>c.id!==ch.id);
+        renderCharsList();
+        renderStage();
+      });
+      bottomRow.appendChild(removeBtn);
+
+      controls.appendChild(bottomRow);
+      item.appendChild(controls);
+      charsList.appendChild(item);
+    });
+  }
+
+  function bindCharDragDropEvents(){
+    charsList.addEventListener("dragover", handleCharDragOver);
+    charsList.addEventListener("dragleave", handleCharDragLeave);
+    charsList.addEventListener("drop", handleCharDrop);
+  }
+
+  function applyImgTransform(img, ch, containerSize){
+    const tx = (ch.offX/100) * containerSize;
+    const ty = (ch.offY/100) * containerSize;
+    img.style.transform = `translate(${tx}px, ${ty}px) scale(${ch.scale})`;
+  }
+
+  function makeDraggable(container, ch, containerSize){
+    let dragging = false;
+    let startX=0, startY=0, startOffX=0, startOffY=0;
+    container.addEventListener("pointerdown", (e)=>{
+      dragging = true;
+      startX = e.clientX; startY = e.clientY;
+      startOffX = ch.offX; startOffY = ch.offY;
+      container.setPointerCapture(e.pointerId);
+    });
+    container.addEventListener("pointermove", (e)=>{
+      if(!dragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      ch.offX = startOffX + (dx/containerSize)*100;
+      ch.offY = startOffY + (dy/containerSize)*100;
+      const img = container.querySelector("img");
+      if(img) applyImgTransform(img, ch, containerSize);
+      renderStage();
+    });
+    function endDrag(e){ dragging = false; }
+    container.addEventListener("pointerup", endDrag);
+    container.addEventListener("pointerleave", endDrag);
+  }
+
+  // ---------- Legend Editor ----------
+  function renderLegendEditor(){
+    // 颜色选择器
+    colorPicker.innerHTML = "";
+    PRESET_COLORS.forEach(pc=>{
+      const swatch = document.createElement("div");
+      swatch.className = "swatch" + (state.selectedColor === pc.color ? " active" : "");
+      swatch.style.background = pc.color;
+      swatch.title = pc.name;
+      swatch.addEventListener("click", ()=>{
+        state.selectedColor = (state.selectedColor === pc.color) ? null : pc.color;
+        renderLegendEditor();
+      });
+      colorPicker.appendChild(swatch);
+    });
+
+    // 已添加列表（带拖拽）
+    legendList.innerHTML = "";
+    state.legend.forEach((item, idx)=>{
+      const div = document.createElement("div");
+      div.className = "legend-item";
+      div.dataset.index = idx;
+      div.draggable = false; // 不整体拖拽，只通过手柄
+
+      // 拖拽手柄
+      const handle = document.createElement("span");
+      handle.className = "drag-handle-sm";
+      handle.textContent = "☰";
+      handle.draggable = true;
+      handle.addEventListener("dragstart", (e)=>handleLegendDragStart(e, idx));
+      handle.addEventListener("dragend", handleLegendDragEnd);
+      handle.addEventListener("drag", (e)=>e.preventDefault());
+      div.appendChild(handle);
+
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      dot.style.background = item.color;
+      const label = document.createElement("span");
+      label.className = "label";
+      label.textContent = item.label;
+      const del = document.createElement("span");
+      del.className = "del";
+      del.textContent = "✕";
+      del.addEventListener("click", ()=>{
+        state.legend.splice(idx, 1);
+        renderLegendEditor();
+        renderLegendOverlay();
+        renderStage();
+      });
+      div.appendChild(dot);
+      div.appendChild(label);
+      div.appendChild(del);
+      legendList.appendChild(div);
+    });
+  }
+
+  // 绑定图例拖放事件（在legendList上委托）
+  function bindLegendDragDropEvents(){
+    legendList.addEventListener("dragover", handleLegendDragOver);
+    legendList.addEventListener("dragleave", handleLegendDragLeave);
+    legendList.addEventListener("drop", handleLegendDrop);
+  }
+
+  // 添加图例
+  addLegendBtn.addEventListener("click", ()=>{
+    const desc = legendDescInput.value.trim();
+    if (!desc) {
+      alert("请输入描述");
+      return;
+    }
+    if (desc.length > 20) {
+      alert("描述不能超过20个字符");
+      return;
+    }
+    if (!state.selectedColor) {
+      alert("请先选择一种颜色");
+      return;
+    }
+    state.legend.push({
+      color: state.selectedColor,
+      label: desc
+    });
+    legendDescInput.value = "";
+    state.selectedColor = null;
+    renderLegendEditor();
+    renderLegendOverlay();
+    renderStage();
+  });
+  legendDescInput.addEventListener("keydown", (e)=>{
+    if (e.key === "Enter") addLegendBtn.click();
+  });
+
+  // ---------- 图例显示 ----------
+  function renderLegendOverlay(){
+    legendOverlay.innerHTML = "";
+    if (state.legend.length === 0) {
+      legendOverlay.classList.add("hidden");
+      return;
+    }
+    legendOverlay.classList.remove("hidden");
+    state.legend.forEach(item=>{
+      const div = document.createElement("div");
+      div.className = "item";
+      const sw = document.createElement("span");
+      sw.className = "sw";
+      sw.style.background = item.color;
+      const label = document.createElement("span");
+      label.className = "label";
+      label.textContent = item.label;
+      div.appendChild(sw);
+      div.appendChild(label);
+      legendOverlay.appendChild(div);
+    });
+  }
+
+  // ---------- stage layout & rendering ----------
+  function computeLayout(){
+    const centerChar = state.chars.find(c=>c.isCenter);
+    const ringChars = state.chars.filter(c=>!c.isCenter);
+    const n = ringChars.length;
+    const diameter = AVATAR_DIAMETER;
+
+    const maxRadiusAuto = Math.min(STAGE_WIDTH, STAGE_HEIGHT)/2 - diameter/2 - 40;
+    let autoRadius = n>0 ? Math.max(180, (diameter+30)*n/(2*Math.PI)) : 0;
+    autoRadius = Math.min(autoRadius, maxRadiusAuto);
+    if(n<=1) autoRadius = Math.min(230, maxRadiusAuto);
+
+    let leftWidth = 0;
+    if (state.title && stageTitle.style.display !== "none") {
+      leftWidth = Math.max(leftWidth, stageTitle.offsetWidth || 0);
+    }
+    const legendWidth = legendOverlay.offsetWidth || 0;
+    leftWidth = Math.max(leftWidth, legendWidth);
+
+    const padding = 50;
+    const maxAllowedRadius = (STAGE_WIDTH - leftWidth - diameter - padding - 20) / 2;
+    const maxRadiusVertical = STAGE_HEIGHT/2 - diameter/2 - 40;
+    const maxRadius = Math.min(maxAllowedRadius, maxRadiusVertical, 400);
+
+    let finalRadius;
+    if (state.customRadius !== null && state.customRadius >= 0) {
+      finalRadius = Math.max(autoRadius, Math.min(state.customRadius, maxRadius));
+    } else {
+      finalRadius = autoRadius;
+    }
+    finalRadius = Math.min(finalRadius, maxRadius);
+
+    let cx = leftWidth + finalRadius + diameter/2 + padding;
+    const maxCx = STAGE_WIDTH - finalRadius - diameter/2 - 20;
+    cx = Math.min(cx, maxCx);
+    const minCx = STAGE_WIDTH/2 + 30;
+    cx = Math.max(cx, minCx);
+    const cy = STAGE_HEIGHT/2;
+
+    radiusValue.textContent = Math.round(finalRadius) + "px";
+
+    const positions = {};
+    ringChars.forEach((ch, i)=>{
+      const angle = -Math.PI/2 + i*(2*Math.PI/n);
+      positions[ch.id] = {
+        x: cx + finalRadius*Math.cos(angle),
+        y: cy + finalRadius*Math.sin(angle),
+        d: diameter
+      };
+    });
+
+    if(centerChar){
+      positions[centerChar.id] = { x: cx, y: cy, d: diameter };
+    }
+
+    return positions;
+  }
+
+  function renderStage(){
+    if (state.title) {
+      stageTitle.textContent = state.title;
+      stageTitle.style.display = "block";
+    } else {
+      stageTitle.style.display = "none";
+    }
+
+    avatarsLayer.innerHTML = "";
+    emptyStage.style.display = state.chars.length===0 ? "flex" : "none";
+
+    const positions = computeLayout();
+
+    state.chars.forEach(ch=>{
+      const pos = positions[ch.id];
+      if(!pos) return;
+      const av = document.createElement("div");
+      av.className = "avatar";
+      av.style.width = pos.d+"px";
+      av.style.height = pos.d+"px";
+      av.style.left = (pos.x - pos.d/2)+"px";
+      av.style.top = (pos.y - pos.d/2)+"px";
+
+      if(ch.src){
+        const img = document.createElement("img");
+        img.src = ch.src;
+        const tx = (ch.offX/100)*pos.d;
+        const ty = (ch.offY/100)*pos.d;
+        img.style.transform = `translate(${tx}px, ${ty}px) scale(${ch.scale})`;
+        av.appendChild(img);
+        av.style.background = "transparent";
+      } else {
+        const textSpan = document.createElement("span");
+        textSpan.className = "avatar-text";
+        const { displayName, fontSize } = getDisplayNameAndFontSize(ch.name, pos.d);
+        textSpan.textContent = displayName;
+        textSpan.style.fontSize = fontSize + "px";
+        av.appendChild(textSpan);
+        av.style.background = "#e8eaed";
+      }
+
+      if(ch.name){
+        const nameTag = document.createElement("div");
+        nameTag.className = "avatar-name";
+        nameTag.textContent = ch.name;
+        av.appendChild(nameTag);
+      }
+
+      avatarsLayer.appendChild(av);
+    });
+  }
+
+  // ---------- responsive scale ----------
+  function fitStage(){
+    const wrapWidth = stageOuter.parentElement.clientWidth - 48;
+    const scale = Math.min(1, wrapWidth / STAGE_WIDTH);
+    stage.style.transform = `scale(${scale})`;
+    stageOuter.style.width = (STAGE_WIDTH*scale)+"px";
+    stageOuter.style.height = (STAGE_HEIGHT*scale)+"px";
+  }
+  window.addEventListener("resize", fitStage);
+
+  // ---------- export ----------
+  exportBtn.addEventListener("click", ()=>{
+    const prevTransform = stage.style.transform;
+    stage.style.transform = "none";
+    exportBtn.textContent = "正在生成……";
+    exportBtn.disabled = true;
+    html2canvas(stage, {backgroundColor:"#ffffff", scale:2, useCORS:true}).then(canvas=>{
+      stage.style.transform = prevTransform;
+      exportBtn.textContent = "导出为图片";
+      exportBtn.disabled = false;
+      const link = document.createElement("a");
+      link.download = (state.title || "CP连线图") + ".png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }).catch(err=>{
+      stage.style.transform = prevTransform;
+      exportBtn.textContent = "导出为图片";
+      exportBtn.disabled = false;
+      alert("导出失败，请重试："+err);
+    });
+  });
+
+  // ---------- init ----------
+  function init(){
+    bindCharDragDropEvents();
+    bindLegendDragDropEvents();
+    renderCharsList();
+    renderLegendEditor();
+    renderLegendOverlay();
+    renderStage();
+    fitStage();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
